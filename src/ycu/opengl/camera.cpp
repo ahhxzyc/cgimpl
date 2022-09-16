@@ -3,20 +3,19 @@
 
 YCU_OPENGL_BEGIN
 
-using ycu::math::float3;
-using ycu::math::mat4f;
+using namespace ycu::math;
 
 
 void Camera::Move(const float3 &disp)
 {
-    transform.eye += speed * disp;
+    pos_ += speed * disp;
 }
 
 void Camera::RotateYaw(float ang)
 {
     //ang *= rotateSpeed;
-    //transform.front = glm::rotate(transform.front, ang, transform.up);
-    //transform.right = glm::rotate(transform.right, ang, transform.up);
+    //front_ = glm::rotate(front_, ang, up_);
+    //right_ = glm::rotate(right_, ang, up_);
 }
 
 void Camera::RotatePitch(float ang)
@@ -31,14 +30,24 @@ float Camera::AspectRatio() const
 
 mat4f Camera::ViewMatrix() const
 {
-    return mat4f::left_transform::lookat(
-        //transform.eye, transform.eye + transform.front, transform.up);
-        transform.eye, float3(0), transform.up);
+    return mat4f::left_transform::lookat( pos_, pos_ + front_, up_ );
 }
 
 mat4f Camera::ProjectionMatrix() const
 {
     return mat4f::left_transform::perspective(60.f, AspectRatio(), nearPlane, farPlane);
+}
+
+void Camera::setDirection(const float2 &dir)
+{
+    // restrict camera vertical view
+    auto sdir = dir;
+    sdir.x = clamp_to(sdir.x, minimumTheta_, float(M_PI) - minimumTheta_);
+    auto cdir = to_cartesian_dir(sdir);
+    // update camera coordinates
+    front_  = cdir;
+    right_  = cross(front_, idealUp_).normalized();
+    up_     = cross(right_, front_);
 }
 
 YCU_OPENGL_END

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <ycu/math/common.h>
-#include <ycu/math/vec3.h>
-#include <ycu/math/vec4.h>
+#include "common.h"
+#include "vec3.h"
+#include "vec4.h"
 
 YCU_MATH_BEGIN
 
@@ -16,9 +16,9 @@ public:
     vec4<T> data[4];
 
 public:
-    tmat4();
-    tmat4(const vec4<T> &c0, const vec4<T> &c1, const vec4<T> &c2, const vec4<T> &c3);
-    tmat4(T x00, T x01, T x02, T x03,
+    constexpr tmat4();
+    constexpr tmat4(const vec4<T> &c0, const vec4<T> &c1, const vec4<T> &c2, const vec4<T> &c3);
+    constexpr tmat4(T x00, T x01, T x02, T x03,
         T x10, T x11, T x12, T x13,
         T x20, T x21, T x22, T x23,
         T x30, T x31, T x32, T x33);
@@ -72,19 +72,19 @@ using mat4f = tmat4<float>;
 using mat4d = tmat4<double>;
 
 template<typename T>
-tmat4<T>::tmat4()
+constexpr tmat4<T>::tmat4()
     :tmat4(identity())
 {
 
 }
 template<typename T>
-tmat4<T>::tmat4(const vec4<T> &c0, const vec4<T> &c1, const vec4<T> &c2, const vec4<T> &c3)
+constexpr tmat4<T>::tmat4(const vec4<T> &c0, const vec4<T> &c1, const vec4<T> &c2, const vec4<T> &c3)
     : data{c0, c1, c2, c3}
 {
 
 }
 template<typename T>
-tmat4<T>::tmat4(
+constexpr tmat4<T>::tmat4(
     T x00, T x01, T x02, T x03,
     T x10, T x11, T x12, T x13,
     T x20, T x21, T x22, T x23,
@@ -195,7 +195,8 @@ auto tmat4<T>::right_transform::scale(const vec3<T> &ratio)
 template<typename T>
 auto tmat4<T>::right_transform::lookat(const vec3<T> &eye, const vec3<T> &target, const vec3<T> &up)
 {
-    // camera space uses right-hand coordinate system
+    // camera space uses left-hand coordinate system
+    // i.e. camera faces towards positive z axis
     auto z = (target - eye).normalized();
     auto x = cross(z, up).normalized();
     auto y = cross(x, z);
@@ -242,7 +243,8 @@ auto tmat4<T>::left_transform::scale(const vec3<T> &ratio)
 template<typename T>
 auto tmat4<T>::left_transform::lookat(const vec3<T> &eye, const vec3<T> &target, const vec3<T> &up)
 {
-    // camera space uses left-hand coordinate system
+    // camera space uses right-hand coordinate system
+    // i.e. camera faces towards negative z axis
     auto z = (eye - target).normalized();
     auto x = cross(up, z).normalized();
     auto y = cross(z, x);

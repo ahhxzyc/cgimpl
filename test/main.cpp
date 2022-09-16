@@ -12,16 +12,9 @@ using ycu::opengl::Shader;
 using ycu::opengl::Camera;
 using ycu::mesh::Mesh;
 using ycu::math::float3;
+using ycu::math::float2;
 
-int main()
-{
-    ycu::log::Log::Init();
-    Window window;
-
-    auto mesh = std::make_shared<Mesh>("E:/vscodedev/ptres/cornell-box/cornell-box.obj");
-    auto meshRender = std::make_shared<MeshRender>(mesh);
-
-    const char *vertexSource = R"(# version 430 core
+const char *vertexSource = R"(# version 430 core
 
 layout(location = 0) in vec4 aPosition;
 layout(location = 1) in vec3 aNormal;
@@ -34,7 +27,7 @@ void main()
     gl_Position = uMVP * aPosition;
 })";
 
-    const char *fragmentSource = R"(# version 430 core
+const char *fragmentSource = R"(# version 430 core
 
 out vec4 fragColor;
 
@@ -42,12 +35,17 @@ void main()
 {
     fragColor = vec4(1,0,0,1);
 })";
-    auto shader = std::make_shared<Shader>("", vertexSource, fragmentSource);
+
+int main()
+{
+    ycu::log::Log::Init();
+    Window window;
+
+    auto mesh       = std::make_shared<Mesh>("E:/vscodedev/ptres/cornell-box/cornell-box.obj");
+    auto meshRender = std::make_shared<MeshRender>(mesh);
+    auto shader     = std::make_shared<Shader>("", vertexSource, fragmentSource);
 
     Camera camera;
-    //camera.screenWidth = 800;
-    //camera.screenHeight = 800;
-    float t = 0.f;
 
     while (!window.ShouldClose())
     {
@@ -61,8 +59,11 @@ void main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         // update camera transform
-        t += 0.01f;
-        camera.transform.eye = float3(std::sin(t), 0.f, std::cos(t));
+        auto rotateRight    = -0.003f * window.relativeCursorX_;
+        auto rotateDown     = 0.003f * window.relativeCursorY_;
+        auto dir = ycu::math::to_spherical_dir(camera.front_) + float2(rotateDown, rotateRight);
+        camera.setDirection(dir);
+
         auto V = camera.ViewMatrix();
         auto P = camera.ProjectionMatrix();
 

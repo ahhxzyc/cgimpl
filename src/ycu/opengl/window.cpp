@@ -1,5 +1,6 @@
 #include "window.h"
 
+#include <ycu/log/log.h>
 #include <iostream>
 
 YCU_OPENGL_BEGIN
@@ -11,12 +12,15 @@ Window::Window()
     {
         std::cout << "Failed to create glfw window." << std::endl;
     }
-    m_GlfwWindow = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
-    if (!m_GlfwWindow)
+    glfwWindow_ = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+    if (!glfwWindow_)
     {
         std::cout << "Failed to create glfw window." << std::endl;
     }
-    glfwMakeContextCurrent(m_GlfwWindow);
+    glfwMakeContextCurrent(glfwWindow_);
+
+    // lock mouse cursor
+    glfwSetInputMode(glfwWindow_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // init GLAD
     if (!gladLoadGLLoader((GLADloadproc(glfwGetProcAddress))))
@@ -25,32 +29,40 @@ Window::Window()
     };
 
     // register GLFW callbacks
-    glfwSetKeyCallback(m_GlfwWindow, [](GLFWwindow*, int key, int, int action, int)
-        {
-            Window->GetEventSender()->Send(KeyDownEvent(glfw_to_ycu_keycode(key)));
-        });
+    //glfwSetKeyCallback(m_GlfwWindow, [](GLFWwindow*, int key, int, int action, int)
+    //    {
+    //        Window->GetEventSender()->Send(KeyDownEvent(glfw_to_ycu_keycode(key)));
+    //    });
 }
 
 
 Window::~Window()
 {
     glfwTerminate();
-    m_GlfwWindow = nullptr;
+    glfwWindow_ = nullptr;
 }
 
 bool Window::ShouldClose()
 {
-    return glfwWindowShouldClose(m_GlfwWindow);
+    return glfwWindowShouldClose(glfwWindow_);
 }
 
 void Window::DoEvents()
 {
     glfwPollEvents();
+
+    // update cursor position
+    double xpos, ypos;
+    glfwGetCursorPos(glfwWindow_, &xpos, &ypos);
+    relativeCursorX_ = int(xpos - cursorX_);
+    relativeCursorY_ = int(ypos - cursorY_);
+    cursorX_ = int(xpos);
+    cursorY_ = int(ypos);
 }
 
 void Window::SwapBuffers()
 {
-    glfwSwapBuffers(m_GlfwWindow);
+    glfwSwapBuffers(glfwWindow_);
 }
 
 

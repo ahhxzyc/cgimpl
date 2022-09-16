@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ycu/math/common.h>
+#include "common.h"
 
 YCU_MATH_BEGIN
 
@@ -18,9 +18,9 @@ public:
 		struct {T r, g, b;};
 	};
 
-	vec3();
-	explicit vec3(T val);
-	vec3(T x, T y, T z);
+	constexpr vec3();
+	explicit constexpr vec3(T val);
+	constexpr vec3(T x, T y, T z);
 
 	auto normalized() const;
 	auto normalize();
@@ -58,17 +58,17 @@ using uint3 = vec3<uint32_t>;
 
 
 template<typename T>
-vec3<T>::vec3() : vec3(0)
+constexpr vec3<T>::vec3() : vec3(0)
 {
 
 }
 template<typename T>
-vec3<T>::vec3(T val) : vec3(val, val, val)
+constexpr vec3<T>::vec3(T val) : vec3(val, val, val)
 {
 
 }
 template<typename T>
-vec3<T>::vec3(T x, T y, T z) : x(x), y(y), z(z)
+constexpr vec3<T>::vec3(T x, T y, T z) : x(x), y(y), z(z)
 {
 
 }
@@ -207,5 +207,6 @@ auto cross(const vec3<T> &lhs, const vec3<T> &rhs)
     return vec3<T>(lhs.y * rhs.z - lhs.z * rhs.y, 
         lhs.z * rhs.x - lhs.x * rhs.z, lhs.x * rhs.y - lhs.y * rhs.x);
 }
+
 
 YCU_MATH_END

@@ -17,8 +17,12 @@ public:
     void DoEvents();
     void SwapBuffers();
 
-private:
-    GLFWwindow* m_GlfwWindow;
+public:
+    GLFWwindow* glfwWindow_;
+
+    int cursorX_ = 0, cursorY_ = 0;
+    int relativeCursorX_ = 0, relativeCursorY_ = 0;
+
 };
 
 YCU_OPENGL_END

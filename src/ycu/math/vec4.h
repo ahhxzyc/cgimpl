@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ycu/math/common.h>
+#include "common.h"
 
 YCU_MATH_BEGIN
 
@@ -18,9 +18,9 @@ public:
 		struct {T r, g, b, a;};
 	};
 
-	vec4();
-	explicit vec4(T val);
-	vec4(T x, T y, T z, T w);
+	constexpr vec4();
+	explicit constexpr vec4(T val);
+	constexpr vec4(T x, T y, T z, T w);
 
 	auto normalized() const;
 	auto normalize();
@@ -57,17 +57,17 @@ using float4 = vec4<float>;
 using int4 = vec4<int>;
 
 template<typename T>
-vec4<T>::vec4() : vec4(0)
+constexpr vec4<T>::vec4() : vec4(0)
 {
 
 }
 template<typename T>
-vec4<T>::vec4(T val) : vec4(val, val, val)
+constexpr vec4<T>::vec4(T val) : vec4(val, val, val)
 {
 
 }
 template<typename T>
-vec4<T>::vec4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w)
+constexpr vec4<T>::vec4(T x, T y, T z, T w) : x(x), y(y), z(z), w(w)
 {
 
 }

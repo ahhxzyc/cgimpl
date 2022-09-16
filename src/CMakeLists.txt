@@ -12,6 +12,7 @@ endmacro()
 
 # collect source files
 set(SUB_LIBS math win32 opengl mesh log event)
+file(GLOB SRC_FILES "ycu/*.h")
 foreach(var ${SUB_LIBS})
     add_source(SRC_FILES "ycu/${var}")
 endforeach()

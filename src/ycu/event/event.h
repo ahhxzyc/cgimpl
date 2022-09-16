@@ -33,7 +33,7 @@ template<typename... TEvents>
 template<typename TEvent>
 void sender_t<TEvents...>::send(TEvent& e)
 {
-    auto &set = std::get<receiver_set_t<Event>>(sets_);
+    auto &set = std::get<receiver_set_t<TEvent>>(sets_);
     for (auto r : set)
     {
         r->handle(e);

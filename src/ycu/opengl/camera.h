@@ -8,13 +8,13 @@ YCU_OPENGL_BEGIN
 
 struct Camera
 {
-    struct Transform
-    {
-        ycu::math::float3 eye   = ycu::math::float3(0, 0, 1);
-        ycu::math::float3 up    = ycu::math::float3(0, 1, 0);
-        ycu::math::float3 front = ycu::math::float3(0, 0, -1);
-        ycu::math::float3 right = ycu::math::float3(1, 0, 0);
-    } transform;
+    inline static constexpr auto idealUp_       = ycu::math::float3(0, 1, 0);
+    inline static constexpr auto minimumTheta_  = ycu::math::radians(15.f);
+
+    ycu::math::float3 pos_      = ycu::math::float3(0, 0, 1);
+    ycu::math::float3 up_       = ycu::math::float3(0, 1, 0);
+    ycu::math::float3 front_    = ycu::math::float3(0, 0, -1);
+    ycu::math::float3 right_    = ycu::math::float3(1, 0, 0);
 
     float speed = 0.5f;
     float rotateSpeed = 0.3f;
@@ -30,9 +30,10 @@ struct Camera
     void    RotatePitch (float ang);
     float   AspectRatio () const;
 
-    ycu::math::mat4f                ViewMatrix() const;
-    ycu::math::mat4f                ProjectionMatrix() const;
-    std::vector<ycu::math::float3>  FrustumCorners() const;
+    void setDirection(const ycu::math::float2 &dir);
+
+    ycu::math::mat4f ViewMatrix() const;
+    ycu::math::mat4f ProjectionMatrix() const;
 };
 
 YCU_OPENGL_END
