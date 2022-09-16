@@ -1,36 +1,42 @@
 #pragma once
 
+#include <tuple>
+#include <vector>
+
 #define YCU_EVENT_BEGIN namespace ycu::event {
 #define YCU_EVENT_END }
 
 YCU_EVENT_BEGIN
 
-typename<typename... Events>
+template<typename... TEvents>
 class sender_t
 {
 private:
-    template<typename Event>
-    using receiver_set = std::unordered_set<receiver_t<Event> *>;
+    template<typename TEvent>
+    using receiver_set_t = std::unordered_set<receiver_t<TEvent> *>;
 
-    std::tuple<receiver_set<Events>...>  m_Sets;
+    std::tuple<receiver_set_t<TEvents>...>  sets_;
 
 public:
-    template<typename Event> void Send(Event& e);
+    template<typename TEvent> 
+    void send(TEvent& e);
 };
 
-
+template<typename TEvent>
 class receiver_t
 {
+public:
+    void handle(const TEvent& e);
+};
 
-}
-
-template<typename Event> 
-void sender::Send(Event& e)
+template<typename... TEvents> 
+template<typename TEvent>
+void sender_t<TEvents...>::send(TEvent& e)
 {
-    auto &set = std::get<receiver_set<Event>>(m_Sets);
-    for (auto rec : set)
+    auto &set = std::get<receiver_set_t<Event>>(sets_);
+    for (auto r : set)
     {
-        rec.Handle(e);
+        r->handle(e);
     }
 }
 
