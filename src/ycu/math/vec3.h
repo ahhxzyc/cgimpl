@@ -1,8 +1,6 @@
 #pragma once
 
-#include "common.h"
-#include <cmath>
-#include <cstdint>
+#include <ycu/math/common.h>
 
 YCU_MATH_BEGIN
 
@@ -38,6 +36,9 @@ public:
 	auto& operator -= (const SelfType& v);
 	auto& operator *= (const SelfType& v);
 	auto& operator /= (const SelfType& v);
+
+    auto &operator[] (size_t idx);
+    auto &operator[] (size_t idx) const;
 };
 
 template<typename T> auto operator - (const vec3<T> &v);
@@ -148,6 +149,18 @@ auto &vec3<T>::operator /= (const SelfType &v)
 {
     x /= v.x; y /= v.y; z /= v.z;
     return *this;
+}
+
+template<typename T>
+auto &vec3<T>::operator[] (size_t idx)
+{
+    return data[idx];
+}
+
+template<typename T>
+auto &vec3<T>::operator[] (size_t idx) const
+{
+    return data[idx];
 }
 
 template<typename T>

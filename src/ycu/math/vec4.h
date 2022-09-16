@@ -1,7 +1,6 @@
 #pragma once
 
-#include "common.h"
-#include <cmath>
+#include <ycu/math/common.h>
 
 YCU_MATH_BEGIN
 

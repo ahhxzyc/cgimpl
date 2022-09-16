@@ -4,7 +4,6 @@
 
 YCU_OPENGL_BEGIN
 
-
 Window::Window()
 {
     // init GLFW
@@ -24,6 +23,12 @@ Window::Window()
     {
         std::cout << "Failed to init GLAD" << std::endl;
     };
+
+    // register GLFW callbacks
+    glfwSetKeyCallback(m_GlfwWindow, [](GLFWwindow*, int key, int, int action, int)
+        {
+            Window->GetEventSender()->Send(KeyDownEvent(glfw_to_ycu_keycode(key)));
+        });
 }
 
 

@@ -1,10 +1,8 @@
 #pragma once
 
-#include "common.h"
-#include "vec3.h"
-#include "vec4.h"
-
-#include <cmath>
+#include <ycu/math/common.h>
+#include <ycu/math/vec3.h>
+#include <ycu/math/vec4.h>
 
 YCU_MATH_BEGIN
 
@@ -14,6 +12,7 @@ class tmat4
 public:
     using self_t = tmat4<T>;
 
+    // rows of the matrix
     vec4<T> data[4];
 
 public:
@@ -37,6 +36,9 @@ public:
     auto &get_column(size_t idx) const;
     auto get_row(size_t idx) const;
 
+    auto transpose() const;
+
+    // meant for use with DirectX
     struct right_transform
     {
         static auto translate(const vec3<T> &v);
@@ -44,10 +46,19 @@ public:
         static auto rotate_x(T angle);
         static auto scale(const vec3<T> &ratio);
         static auto lookat(const vec3<T> &eye, const vec3<T> &target, const vec3<T> &up);
-        static auto perspective(T fovy, T aspect_ratio, T near_plane, T far_plane);
+        static auto perspective(T fovy_degrees, T aspect_ratio, T near_plane, T far_plane);
     };
 
-    
+    // meant for use with OpenGL
+    struct left_transform
+    {
+        static auto translate(const vec3<T> &v);
+        static auto rotate(const vec3<T> &axis, T angle);
+        static auto rotate_x(T angle);
+        static auto scale(const vec3<T> &ratio);
+        static auto lookat(const vec3<T> &eye, const vec3<T> &target, const vec3<T> &up);
+        static auto perspective(T fovy_degrees, T aspect_ratio, T near_plane, T far_plane);
+    };
 };
 
 template<typename T> auto operator + (const tmat4<T> &lhs, const tmat4<T> &rhs);
@@ -113,7 +124,6 @@ template<typename T> auto tmat4<T>::from_rows(
         v1.x, v1.y, v1.z, v1.w,
         v2.x, v2.y, v2.z, v2.w,
         v3.x, v3.y, v3.z, v3.w);
-
 }
 template<typename T>
 auto &tmat4<T>::operator[](size_t idx)
@@ -143,6 +153,12 @@ auto tmat4<T>::get_row(size_t idx) const
 }
 
 template<typename T>
+auto tmat4<T>::transpose() const
+{
+    return from_rows(data[0], data[1], data[2], data[3]);
+}
+
+template<typename T>
 auto tmat4<T>::right_transform::translate(const vec3<T> &v)
 {
     return self_t(
@@ -154,7 +170,7 @@ auto tmat4<T>::right_transform::translate(const vec3<T> &v)
 template<typename T>
 auto tmat4<T>::right_transform::rotate(const vec3<T> &axis, T angle)
 {
-
+    // TODO
 }
 template<typename T>
 auto tmat4<T>::right_transform::rotate_x(T angle)
@@ -179,6 +195,7 @@ auto tmat4<T>::right_transform::scale(const vec3<T> &ratio)
 template<typename T>
 auto tmat4<T>::right_transform::lookat(const vec3<T> &eye, const vec3<T> &target, const vec3<T> &up)
 {
+    // camera space uses right-hand coordinate system
     auto z = (target - eye).normalized();
     auto x = cross(z, up).normalized();
     auto y = cross(x, z);
@@ -189,9 +206,9 @@ auto tmat4<T>::right_transform::lookat(const vec3<T> &eye, const vec3<T> &target
         {0, 0, 0, 1});
 }
 template<typename T>
-auto tmat4<T>::right_transform::perspective(T fovy, T aspect_ratio, T near_plane, T far_plane)
+auto tmat4<T>::right_transform::perspective(T fovy_degrees, T aspect_ratio, T near_plane, T far_plane)
 {
-    auto C = T(1) / std::tan(fovy * T(0.5));
+    auto C = T(1) / std::tan(radians(fovy_degrees) * T(0.5));
     auto A = far_plane / (far_plane - near_plane);
     auto B = -near_plane * far_plane / (far_plane - near_plane);
     return self_t(
@@ -199,6 +216,53 @@ auto tmat4<T>::right_transform::perspective(T fovy, T aspect_ratio, T near_plane
         0, C, 0, 0,
         0, 0, A, 1,
         0, 0, B, 0);
+}
+
+template<typename T>
+auto tmat4<T>::left_transform::translate(const vec3<T> &v)
+{
+    return tmat4<T>::right_transform::translate(v).transpose();
+}
+template<typename T>
+auto tmat4<T>::left_transform::rotate(const vec3<T> &axis, T angle)
+{
+    return tmat4<T>::right_transform::rotate(axis, angle).transpose();
+}
+template<typename T>
+auto tmat4<T>::left_transform::rotate_x(T angle)
+{
+    return tmat4<T>::right_transform::rotate_x(angle).transpose();
+}
+
+template<typename T>
+auto tmat4<T>::left_transform::scale(const vec3<T> &ratio)
+{
+    return tmat4<T>::right_transform::scale(ratio).transpose();
+}
+template<typename T>
+auto tmat4<T>::left_transform::lookat(const vec3<T> &eye, const vec3<T> &target, const vec3<T> &up)
+{
+    // camera space uses left-hand coordinate system
+    auto z = (eye - target).normalized();
+    auto x = cross(up, z).normalized();
+    auto y = cross(z, x);
+    return self_t(
+        x.x, x.y, x.z, 0,
+        y.x, y.y, y.z, 0,
+        z.x, z.y, z.z, 0,
+          0,   0,   0, 1) * translate(-eye);
+}
+template<typename T>
+auto tmat4<T>::left_transform::perspective(T fovy_degrees, T aspect_ratio, T near_plane, T far_plane)
+{
+    auto C = T(1) / std::tan(radians(fovy_degrees) * T(0.5));
+    auto A = (near_plane + far_plane) / (far_plane - near_plane);
+    auto B = T(2) * near_plane * far_plane / (far_plane - near_plane);
+    return self_t(
+        C / aspect_ratio, 0,  0, 0,
+        0,                C,  0, 0,
+        0,                0,  A, B,
+        0,                0, -1, 0);
 }
 
 template<typename T> auto operator + (const tmat4<T> &lhs, const tmat4<T> &rhs)
