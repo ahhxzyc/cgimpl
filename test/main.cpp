@@ -5,6 +5,7 @@
 #include <ycu/math.h>
 #include <ycu/mesh/mesh.h>
 #include <ycu/log/log.h>
+#include <ycu/event/keyboard.h>
 
 using ycu::opengl::Window;
 using ycu::opengl::MeshRender;
@@ -13,6 +14,7 @@ using ycu::opengl::Camera;
 using ycu::mesh::Mesh;
 using ycu::math::float3;
 using ycu::math::float2;
+using namespace ycu::event;
 
 const char *vertexSource = R"(# version 430 core
 
@@ -39,8 +41,13 @@ void main()
 int main()
 {
     ycu::log::Log::Init();
-    Window window;
 
+    Window window;
+    Keyboard keyboard;
+    window.attach(static_cast<receiver_t<KeyDownEvent>*>(&keyboard));
+    window.attach(static_cast<receiver_t<KeyUpEvent>*>(&keyboard));
+    window.attach(static_cast<receiver_t<KeyHoldEvent>*>(&keyboard));
+    
     auto mesh       = std::make_shared<Mesh>("E:/vscodedev/ptres/cornell-box/cornell-box.obj");
     auto meshRender = std::make_shared<MeshRender>(mesh);
     auto shader     = std::make_shared<Shader>("", vertexSource, fragmentSource);
@@ -59,13 +66,17 @@ int main()
         glClear(GL_COLOR_BUFFER_BIT);
 
         // update camera transform
-        auto rotateRight    = -0.003f * window.relativeCursorX_;
-        auto rotateDown     = 0.003f * window.relativeCursorY_;
-        auto dir = ycu::math::to_spherical_dir(camera.front_) + float2(rotateDown, rotateRight);
-        camera.setDirection(dir);
+        Camera::UpdateParams params;
+        params.rotateLeft = -0.003f * window.relativeCursorX_;
+        params.rotateUp   = -0.003f * window.relativeCursorY_;
+        params.moveFront = keyboard.is_down(GLFW_KEY_W);
+        params.moveLeft  = keyboard.is_down(GLFW_KEY_A);
+        params.moveBack  = keyboard.is_down(GLFW_KEY_S);
+        params.moveRight = keyboard.is_down(GLFW_KEY_D);
+        camera.update(params);
 
-        auto V = camera.ViewMatrix();
-        auto P = camera.ProjectionMatrix();
+        auto V = camera.viewMatrix();
+        auto P = camera.projectionMatrix();
 
         // render
         shader->Bind();

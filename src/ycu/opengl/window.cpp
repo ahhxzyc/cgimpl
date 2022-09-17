@@ -1,44 +1,59 @@
 #include "window.h"
+#include "../log/log.h"
+#include "../event/keyboard.h"
 
-#include <ycu/log/log.h>
 #include <iostream>
+#include <unordered_map>
 
 YCU_OPENGL_BEGIN
+
+using namespace ycu::event;
+
+static std::unordered_map<GLFWwindow*, Window*> sWindowPtrMap;
 
 Window::Window()
 {
     // init GLFW
-    if (!glfwInit())
-    {
-        std::cout << "Failed to create glfw window." << std::endl;
-    }
+    ASSERT(glfwInit());
     glfwWindow_ = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
-    if (!glfwWindow_)
-    {
-        std::cout << "Failed to create glfw window." << std::endl;
-    }
+    ASSERT(glfwWindow_);
     glfwMakeContextCurrent(glfwWindow_);
 
     // lock mouse cursor
     glfwSetInputMode(glfwWindow_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
     // init GLAD
-    if (!gladLoadGLLoader((GLADloadproc(glfwGetProcAddress))))
-    {
-        std::cout << "Failed to init GLAD" << std::endl;
-    };
+    ASSERT(gladLoadGLLoader((GLADloadproc(glfwGetProcAddress))));
 
     // register GLFW callbacks
-    //glfwSetKeyCallback(m_GlfwWindow, [](GLFWwindow*, int key, int, int action, int)
-    //    {
-    //        Window->GetEventSender()->Send(KeyDownEvent(glfw_to_ycu_keycode(key)));
-    //    });
+    sWindowPtrMap[glfwWindow_] = this;
+    glfwSetKeyCallback(glfwWindow_, [](GLFWwindow *win, int key, int, int action, int)
+        {
+            auto window = sWindowPtrMap[win];
+            if (!window)
+                return;
+            switch (action)
+            {
+                case GLFW_PRESS:
+                    window->send(KeyDownEvent{key});
+                    break;
+                case GLFW_REPEAT:
+                    window->send(KeyHoldEvent{key});
+                    break;
+                case GLFW_RELEASE:
+                    window->send(KeyUpEvent{key});
+                    break;
+                default:
+                    ;
+            }
+        });
 }
 
 
 Window::~Window()
 {
     glfwTerminate();
+    sWindowPtrMap.erase(glfwWindow_);
     glfwWindow_ = nullptr;
 }
 

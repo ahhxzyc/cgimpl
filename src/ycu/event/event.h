@@ -1,6 +1,8 @@
 #pragma once
 
 #include <tuple>
+//#include <unordered_set>
+#include <functional>
 #include <vector>
 
 #define YCU_EVENT_BEGIN namespace ycu::event {
@@ -8,36 +10,49 @@
 
 YCU_EVENT_BEGIN
 
-template<typename... TEvents>
-class sender_t
-{
-private:
-    template<typename TEvent>
-    using receiver_set_t = std::unordered_set<receiver_t<TEvent> *>;
-
-    std::tuple<receiver_set_t<TEvents>...>  sets_;
-
-public:
-    template<typename TEvent> 
-    void send(TEvent& e);
-};
-
 template<typename TEvent>
 class receiver_t
 {
 public:
-    void handle(const TEvent& e);
+    using handler_type = std::function<void(const TEvent &)>;
+public:
+    virtual ~receiver_t() = default;
+    virtual void handle(const TEvent &) = 0;
+private:
+    handler_type f_;
 };
 
-template<typename... TEvents> 
-template<typename TEvent>
-void sender_t<TEvents...>::send(TEvent& e)
+template<typename... TEvents>
+class sender_t
 {
-    auto &set = std::get<receiver_set_t<TEvent>>(sets_);
-    for (auto r : set)
+public:
+    template<typename TEvent>
+    using container_type = std::vector<receiver_t<TEvent>*>;
+public:
+    template<typename TEvent>
+    void attach(receiver_t<TEvent>* r)
     {
-        r->handle(e);
+        auto &v = assure<TEvent>();
+        v.push_back(r);
     }
-}
+    template<typename TEvent>
+    void send(const TEvent &e)
+    {
+        auto &v = assure<TEvent>();
+        for (auto r : v)
+        {
+            if (r)
+                r->handle(e);
+        }
+    }
+private:
+    template<typename TEvent>
+    auto &assure()
+    {
+        return std::get<container_type<TEvent>>(receivers_);
+    }
+private:
+    std::tuple<container_type<TEvents>...> receivers_;
+};
 
 YCU_EVENT_END
