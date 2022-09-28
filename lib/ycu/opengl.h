@@ -1,0 +1,10 @@
+#pragma once
+#include "opengl/common.h"
+#include "opengl/buffer.h"
+#include "opengl/camera.h"
+#include "opengl/framebuffer.h"
+#include "opengl/meshrender.h"
+#include "opengl/shader.h"
+#include "opengl/texture.h"
+#include "opengl/cubetexture.h"
+#include "opengl/window.h"
