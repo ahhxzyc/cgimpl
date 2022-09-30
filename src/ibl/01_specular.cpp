@@ -117,28 +117,106 @@ void main()
     fragColor = texture(uSkybox, vPosition);
 })";
 
-const char *diffuseVS = R"(# version 430 core
+const char *meshVS = R"(# version 430 core
 layout(location = 0) in vec4 aPosition;
 layout(location = 1) in vec3 aNormal;
 layout(location = 2) in vec2 aTexCoord;
-uniform mat4 uMVP;
+uniform mat4 uModelMatrix;
+uniform mat4 uVPMatrix;
+out vec3 vPosition;
 out vec3 vNormal;
 void main()
 {
-    gl_Position = uMVP * aPosition;
+    vPosition = vec3(uModelMatrix * aPosition);
+    gl_Position = uVPMatrix * vec4(vPosition, 1.0);
     vNormal = aNormal;
 })";
 
-const char *diffuseFS = R"(# version 430 core
+const char *meshFS = R"(# version 430 core
+#define PI 3.1415926
 layout(binding = 0) uniform samplerCube uIrradiance;
-layout(location=0) out vec4 fragColor;
+layout(binding = 1) uniform samplerCube uEnvironmentMap;
+layout(location = 0) out vec4 fragColor;
+uniform vec3 uCameraPos;
+in vec3 vPosition;
 in vec3 vNormal;
+float RadicalInverse_VdC(uint bits) 
+{
+    bits = (bits << 16u) | (bits >> 16u);
+    bits = ((bits & 0x55555555u) << 1u) | ((bits & 0xAAAAAAAAu) >> 1u);
+    bits = ((bits & 0x33333333u) << 2u) | ((bits & 0xCCCCCCCCu) >> 2u);
+    bits = ((bits & 0x0F0F0F0Fu) << 4u) | ((bits & 0xF0F0F0F0u) >> 4u);
+    bits = ((bits & 0x00FF00FFu) << 8u) | ((bits & 0xFF00FF00u) >> 8u);
+    return float(bits) * 2.3283064365386963e-10; // / 0x100000000
+}
+vec2 Hammersley(uint i, uint N)
+{
+    return vec2(float(i)/float(N), RadicalInverse_VdC(i));
+}
+vec3 ImportanceSampleGGX( vec2 Xi, float Roughness, vec3 N )
+{
+    float a = Roughness * Roughness;
+    float Phi = 2 * PI * Xi.x;
+    float CosTheta = sqrt( (1 - Xi.y) / ( 1 + (a*a - 1) * Xi.y ) );
+    float SinTheta = sqrt( 1 - CosTheta * CosTheta );
+    vec3 H;
+    H.x = SinTheta * cos( Phi );
+    H.y = SinTheta * sin( Phi );
+    H.z = CosTheta;
+    vec3 UpVector = abs(N.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
+    vec3 TangentX = normalize( cross( UpVector, N ) );
+    vec3 TangentY = cross( N, TangentX );
+    // Tangent to world space
+    return TangentX * H.x + TangentY * H.y + N * H.z;
+}
+float GeometrySchlickGGX(float NoV, float roughness)
+{
+    float a = roughness;
+    float k = (a * a) / 2.0;
+
+    float nom   = NoV;
+    float denom = NoV * (1.0 - k) + k;
+
+    return nom / denom;
+}
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness)
+{
+    float NoV = max(dot(N, V), 0.0);
+    float NoL = max(dot(N, L), 0.0);
+    float ggx2 = GeometrySchlickGGX(NoV, roughness);
+    float ggx1 = GeometrySchlickGGX(NoL, roughness);
+
+    return ggx1 * ggx2;
+}
+vec3 SpecularIBL(vec3 specularColor, float roughness, vec3 N, vec3 V)
+{
+    vec3 Lo = vec3(0);
+    int numSamples = 1024;
+    for (int i = 0; i < numSamples; i ++ )
+    {
+        vec2 sam = Hammersley(i, numSamples);
+        vec3 H = ImportanceSampleGGX(sam, roughness, N);
+        vec3 L = 2 * dot(V, H) * H - V;
+        float NoV = clamp(dot(N, V), 0, 1);
+        float NoL = clamp(dot(N, L), 0, 1);
+        float NoH = clamp(dot(N, H), 0, 1);
+        float VoH = clamp(dot(V, H), 0, 1);
+        if (NoL > 0)
+        {
+            vec3 Li = texture(uEnvironmentMap, L).rgb;
+            float G = GeometrySmith(N, V, L, roughness);
+            float Fc = pow(1 - VoH, 5);
+            vec3 F = (1 - Fc) * specularColor + Fc;
+            Lo += Li * F * G * VoH / (NoH * NoV);
+        }
+    }
+    return Lo / numSamples;
+}
 void main()
 {
-    vec3 albedo = vec3(1);
     vec3 N = normalize(vNormal);
-    vec3 L = texture(uIrradiance, N).rgb * albedo;
-    fragColor = vec4(L, 1.0);
+    vec3 V = normalize(uCameraPos - vPosition);
+    fragColor = vec4(SpecularIBL(vec3(1), 0.5, N, V), 1.0);
 })";
 
 
@@ -265,7 +343,7 @@ int main()
     
     auto sphere = std::make_shared<Mesh>("../../../res/sphere.obj");
     auto sphereRender = std::make_shared<MeshRender>(sphere);
-    auto diffuseShader = std::make_shared<Shader>("diffuse", diffuseVS, diffuseFS);
+    auto meshShader = std::make_shared<Shader>("mesh", meshVS, meshFS);
 
     auto quad = std::shared_ptr<Mesh>(Mesh::quad());
     auto quadRender = std::make_shared<MeshRender>(quad);
@@ -323,9 +401,12 @@ int main()
             // render mesh
             auto M = sphere->modelMatrix();
             glEnable(GL_DEPTH_TEST);
-            diffuseShader->bind();
-            diffuseShader->set_uniform("uMVP", P*V*M);
+            meshShader->bind();
+            meshShader->set_uniform("uModelMatrix", M);
+            meshShader->set_uniform("uVPMatrix", P * V);
+            meshShader->set_uniform("uCameraPos", camera.pos_);
             irradianceMap->bind(0);
+            cubeTexture->bind(1);
             sphereRender->render(0);
         fb.unbind();
 
