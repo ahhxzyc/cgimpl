@@ -10,11 +10,10 @@ public:
     ~CubeTexture();
 
 public:
-    void Bind(uint32_t slot) const;
-    void GenerateMipmap() const;
+    void bind(uint32_t slot) const;
+    void generate_mipmap() const;
 public:
     GLuint handle{};
 private:
-    int m_Size;
-    GLenum m_DataFormat{};
+    int size_;
 };

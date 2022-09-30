@@ -4,6 +4,7 @@
 #include "texture.h"
 #include <vector>
 #include <memory>
+#include <map>
 
 YCU_OPENGL_BEGIN
 
@@ -15,7 +16,7 @@ public:
     ~Framebuffer();
 
     void add_render_target(GLenum format);
-    void set_render_target(GLint cubeTexture, int face, int rtIndex, int level = 0);
+    void set_render_target(int index, GLint cubeTexture, int face, int level = 0);
     std::shared_ptr<Texture> nth_render_target(int index);
     void bind();
     void unbind();
@@ -25,7 +26,9 @@ public:
 private:
     GLuint handle_;
     int width_, height_;
-    std::vector<std::shared_ptr<Texture>> renderTargets_;
+    inline static const int maxNumRTs = 8;
+    int numRTs = 0;
+    std::shared_ptr<Texture> renderTargets_[maxNumRTs];
 };
 
 

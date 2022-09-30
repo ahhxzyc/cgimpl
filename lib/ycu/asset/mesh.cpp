@@ -8,7 +8,7 @@ using ycu::math::float3;
 using ycu::math::float2;
 using ycu::math::uint3;
 
-YCU_MESH_BEGIN
+YCU_ASSET_BEGIN
 
 Mesh::Mesh(const std::string &filename,
     const float3 &trans , const float3 &scale )
@@ -105,4 +105,4 @@ Mesh *Mesh::quad()
     return mesh;
 }
 
-YCU_MESH_END
+YCU_ASSET_END

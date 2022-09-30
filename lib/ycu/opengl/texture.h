@@ -24,11 +24,10 @@ public:
     Texture(const TextureDesc &desc);
     void set_data(int w, int h, int channels, void *data, GLenum dataType);
     void bind(int slot);
-    auto handle() const {return handle_;}
 private:
     int mipmap_levels(int w, int h);
-private:
-    GLuint handle_;
+public:
+    GLuint handle;
 };
 
 YCU_OPENGL_END

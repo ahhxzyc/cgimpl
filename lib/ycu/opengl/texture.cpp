@@ -6,7 +6,7 @@ YCU_OPENGL_BEGIN
 
 Texture::Texture(const TextureDesc &desc)
 {
-    GLCALL(glCreateTextures(GL_TEXTURE_2D, 1, &handle_));
+    GLCALL(glCreateTextures(GL_TEXTURE_2D, 1, &handle));
 
     int levels = 1;
     if (desc.minFilter == GL_NEAREST_MIPMAP_NEAREST ||
@@ -17,11 +17,11 @@ Texture::Texture(const TextureDesc &desc)
         levels = mipmap_levels(desc.width, desc.height);
     }
 
-    GLCALL(glTextureStorage2D(handle_, levels, desc.internalFormat, desc.width, desc.height));
-    GLCALL(glTextureParameteri(handle_, GL_TEXTURE_MIN_FILTER, desc.minFilter));
-    GLCALL(glTextureParameteri(handle_, GL_TEXTURE_MAG_FILTER, desc.magFilter));
-    GLCALL(glTextureParameteri(handle_, GL_TEXTURE_WRAP_S, desc.wrapS));
-    GLCALL(glTextureParameteri(handle_, GL_TEXTURE_WRAP_T, desc.wrapT));
+    GLCALL(glTextureStorage2D(handle, levels, desc.internalFormat, desc.width, desc.height));
+    GLCALL(glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, desc.minFilter));
+    GLCALL(glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, desc.magFilter));
+    GLCALL(glTextureParameteri(handle, GL_TEXTURE_WRAP_S, desc.wrapS));
+    GLCALL(glTextureParameteri(handle, GL_TEXTURE_WRAP_T, desc.wrapT));
 }
 
 void Texture::set_data(int w, int h, int channels, void *data, GLenum dataType)
@@ -34,8 +34,8 @@ void Texture::set_data(int w, int h, int channels, void *data, GLenum dataType)
         case 4: format = GL_RGBA; break;
         default: ;
     }
-    GLCALL(glTextureSubImage2D(handle_, 0, 0, 0, w, h, format, dataType, data));
-    GLCALL(glGenerateTextureMipmap(handle_));
+    GLCALL(glTextureSubImage2D(handle, 0, 0, 0, w, h, format, dataType, data));
+    GLCALL(glGenerateTextureMipmap(handle));
 }
 
 int Texture::mipmap_levels(int w, int h)
@@ -52,7 +52,7 @@ int Texture::mipmap_levels(int w, int h)
 
 void Texture::bind(int slot)
 {
-    GLCALL(glBindTextureUnit(slot, handle_));
+    GLCALL(glBindTextureUnit(slot, handle));
 }
 
 TextureDesc TextureDesc::without_mipmap(int w, int h, GLenum format)

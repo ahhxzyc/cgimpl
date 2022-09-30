@@ -1,15 +1,13 @@
 #pragma once
 
+#include "common.h"
 #include <ycu/math.h>
 
 #include <vector>
 #include <memory>
 #include <string>
 
-#define YCU_MESH_BEGIN namespace ycu::mesh {
-#define YCU_MESH_END }
-
-YCU_MESH_BEGIN
+YCU_ASSET_BEGIN
 
 struct Vertex
 {
@@ -40,7 +38,13 @@ struct Mesh
         return FaceCount() * 3;
     }
 
+    auto modelMatrix() const
+    {
+        return ycu::math::mat4f::left_transform::translate(translation) * 
+            ycu::math::mat4f::left_transform::scale(scale);
+    }
+
     static Mesh* quad();
 };
 
-YCU_MESH_END
+YCU_ASSET_END

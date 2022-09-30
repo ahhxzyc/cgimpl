@@ -4,9 +4,8 @@
 
 YCU_OPENGL_BEGIN
 
-using ycu::mesh::Vertex;
-using ycu::mesh::Mesh;
-using ycu::math::uint3;
+using namespace ycu::asset;
+using namespace ycu::math;
 
 MeshRender::MeshRender(const std::shared_ptr<Mesh> &mesh) : mesh_(mesh)
 {
@@ -40,13 +39,19 @@ MeshRender::MeshRender(const std::shared_ptr<Mesh> &mesh) : mesh_(mesh)
     GLCALL(glBindVertexArray(0));
 }
 
+MeshRender::MeshRender(const std::string &path):
+    MeshRender(std::make_shared<Mesh>(path))
+{
+
+}
+
 void MeshRender::render(int mode)
 {
     GLCALL(glBindVertexArray(vertexArray_));
 
     if (mode == 1)
     {
-        GLCALL(glPointSize(2.f));
+        GLCALL(glPointSize(10.f));
         GLCALL(glDrawElements(GL_POINTS, mesh_->indices.size() * 3, GL_UNSIGNED_INT, 0));
     }
     else

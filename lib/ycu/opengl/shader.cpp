@@ -8,6 +8,7 @@ using ycu::math::mat4f;
 
 Shader::Shader(
     const std::string &name, const std::string &vertexSource, const std::string &fragmentSource)
+    : name(name)
 {
     GLCALL(m_Handle = glCreateProgram());
 
@@ -22,7 +23,7 @@ Shader::Shader(
     if (!suc)
     {
         GLCALL(glGetProgramInfoLog(m_Handle, 512, NULL, log));
-        LOG_ERROR("Failed to link shader: {}", log);
+        LOG_ERROR("Failed to link shader {}: {}", name, log);
     }
 
     // Clean up
@@ -54,7 +55,7 @@ GLuint Shader::compile(const std::string &code, GLuint type) const
         error.resize(length);
         GLCALL(glGetShaderInfoLog(sid, length, &length, error.data()));
         GLCALL(glDeleteShader(sid));
-        LOG_ERROR("Failed to compile shader. Error : {}", error);
+        LOG_ERROR("Failed to compile shader {}. Error : {}", name, error);
         return 0;
     }
     GLCALL(glAttachShader(m_Handle, sid));

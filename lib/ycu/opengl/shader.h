@@ -21,6 +21,8 @@ public:
     void set_uniform(const std::string &name, const ycu::math::float3 &vec);
     void set_uniform(const std::string &name, float val);
     void set_uniform(const std::string &name, int val);
+public:
+    std::string name;
 private:
     GLuint m_Handle = 0;
 };

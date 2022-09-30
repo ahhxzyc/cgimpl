@@ -9,17 +9,12 @@ Framebuffer::Framebuffer(int w, int h) : width_(w), height_(h)
 {
     GLCALL(glCreateFramebuffers(1, &handle_));
 
-    // render target
-    add_render_target(GL_RGBA8);
-
     // depth & stencil
     GLuint ds;
     GLCALL(glCreateTextures(GL_TEXTURE_2D, 1, &ds));
     GLCALL(glBindTexture(GL_TEXTURE_2D, ds));
     GLCALL(glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH24_STENCIL8, w, h));
     GLCALL(glNamedFramebufferTexture(handle_, GL_DEPTH_STENCIL_ATTACHMENT, ds, 0));
-
-    ASSERT(is_complete());
 }
 
 Framebuffer::~Framebuffer()
@@ -42,21 +37,31 @@ void Framebuffer::unbind()
 
 void Framebuffer::add_render_target(GLenum format)
 {
-    auto tex = std::make_shared<Texture>(
-        TextureDesc::without_mipmap(width_, height_, format));
-    renderTargets_.push_back(tex);
-    GLCALL(glNamedFramebufferTexture(
-        handle_, GL_COLOR_ATTACHMENT0 + renderTargets_.size() - 1, tex->handle(), 0));
+    if (numRTs >= maxNumRTs)
+    {
+        LOG_WARN("Too many render targets");
+        return;
+    }
+    auto tex = std::make_shared<Texture>(TextureDesc::without_mipmap(width_, height_, format));
+    renderTargets_[numRTs] = tex;
+    GLCALL(glNamedFramebufferTexture(handle_, GL_COLOR_ATTACHMENT0 + numRTs, tex->handle, 0));
+    numRTs ++ ;
     ASSERT(is_complete());
 }
 
 std::shared_ptr<Texture> Framebuffer::nth_render_target(int index)
 {
-    if (index < renderTargets_.size())
+    if (index >= numRTs)
     {
-        return renderTargets_[index];
+        LOG_WARN("Error requesting render target {} from {} RTs", index, numRTs);
+        return {};
     }
-    return {};
+    if (!renderTargets_[index])
+    {
+        LOG_WARN("Unable to fetch render target {}, maybe it is a cubemap", index);
+        return {};
+    }
+    return renderTargets_[index];
 }
 
 bool Framebuffer::is_complete()
@@ -67,18 +72,26 @@ bool Framebuffer::is_complete()
 
 void Framebuffer::specify_drawbuffers()
 {
-    GLuint attachments[8];
-    int n = (std::min)(8, (int)renderTargets_.size());
-    for (int i = 0; i < n; i ++)
+    GLuint attachments[maxNumRTs];
+    for (int i = 0; i < numRTs; i ++ )
     {
         attachments[i] = GL_COLOR_ATTACHMENT0 + i;
     }
-    GLCALL(glNamedFramebufferDrawBuffers(handle_, n, attachments));
+    GLCALL(glNamedFramebufferDrawBuffers(handle_, numRTs, attachments));
 }
 
-void Framebuffer::set_render_target(GLint cubeTexture, int face, int rtIndex, int level /*= 0*/)
+void Framebuffer::set_render_target(int index, GLint cubeTexture, int face, int level /*= 0*/)
 {
-    GLCALL(glNamedFramebufferTextureLayer(handle_, GL_COLOR_ATTACHMENT0 + rtIndex, cubeTexture, level, face));
+    if (index > numRTs)
+    {
+        LOG_WARN("Error setting render target {} among {} RTs, the index should be consecutive", index, numRTs);
+        return ;
+    }
+    if (index == numRTs)
+        numRTs ++ ;
+    renderTargets_[index] = {};
+    GLCALL(glNamedFramebufferTextureLayer(handle_, GL_COLOR_ATTACHMENT0 + index, cubeTexture, level, face));
+    ASSERT(is_complete());
 }
 
 YCU_OPENGL_END
