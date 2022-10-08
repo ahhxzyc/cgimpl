@@ -4,10 +4,10 @@
 
 ## IBL
 
-![result](gallery/ibl.png)
+![pic](./gallery/ibl.png)
 
-![result](gallery/ibl2.png)
+![pic](./gallery/ibl2.png)
 
 ## SSAO
 
-![result](gallery/ssao.png)
+![pic](./gallery/ssao.png)
