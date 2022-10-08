@@ -14,7 +14,7 @@ class Window : public ycu::event::sender_t<
     ycu::event::KeyDownEvent, ycu::event::KeyUpEvent, ycu::event::KeyHoldEvent>
 {
 public:
-    Window();
+    Window(int w, int h);
     ~Window();
 
     bool ShouldClose();

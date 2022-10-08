@@ -37,7 +37,7 @@ struct Camera
     int screenHeight;
 
     float nearPlane = 0.1f;
-    float farPlane = 10.f;
+    float farPlane = 100.f;
 
     float aspectRatio() const;
 
@@ -49,6 +49,7 @@ struct Camera
 
     ycu::math::mat4f viewMatrix() const;
     ycu::math::mat4f projectionMatrix() const;
+    ycu::math::mat4f ortho() const;
 };
 
 YCU_OPENGL_END

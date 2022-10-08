@@ -11,7 +11,7 @@ CubeTexture::CubeTexture(int size) : size_(size)
     GLCALL(glTextureParameteri(handle, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE));
     GLCALL(glTextureParameteri(handle, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE));
     GLCALL(glTextureParameteri(handle, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE));
-    GLCALL(glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR));
+    GLCALL(glTextureParameteri(handle, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR));
     GLCALL(glTextureParameteri(handle, GL_TEXTURE_MAG_FILTER, GL_LINEAR));
 }
 

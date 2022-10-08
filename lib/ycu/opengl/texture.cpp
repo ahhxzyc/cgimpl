@@ -3,8 +3,10 @@
 
 YCU_OPENGL_BEGIN
 
+using namespace ycu::asset;
 
-Texture::Texture(const TextureDesc &desc)
+
+Texture::Texture(const TextureDesc &desc) : desc_(desc)
 {
     GLCALL(glCreateTextures(GL_TEXTURE_2D, 1, &handle));
 
@@ -53,6 +55,13 @@ int Texture::mipmap_levels(int w, int h)
 void Texture::bind(int slot)
 {
     GLCALL(glBindTextureUnit(slot, handle));
+}
+
+std::shared_ptr<Image> Texture::image()
+{
+    auto img = std::make_shared<Image>(desc_.width, desc_.height, 4);
+    GLCALL(glGetTextureImage(handle, 0, GL_RGBA, GL_UNSIGNED_BYTE, img->numBytes(), img->data));
+    return img;
 }
 
 TextureDesc TextureDesc::without_mipmap(int w, int h, GLenum format)

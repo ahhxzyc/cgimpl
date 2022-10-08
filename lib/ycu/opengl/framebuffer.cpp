@@ -10,11 +10,9 @@ Framebuffer::Framebuffer(int w, int h) : width_(w), height_(h)
     GLCALL(glCreateFramebuffers(1, &handle_));
 
     // depth & stencil
-    GLuint ds;
-    GLCALL(glCreateTextures(GL_TEXTURE_2D, 1, &ds));
-    GLCALL(glBindTexture(GL_TEXTURE_2D, ds));
-    GLCALL(glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH24_STENCIL8, w, h));
-    GLCALL(glNamedFramebufferTexture(handle_, GL_DEPTH_STENCIL_ATTACHMENT, ds, 0));
+    GLCALL(glCreateTextures(GL_TEXTURE_2D, 1, &depthStencil_));
+    GLCALL(glTextureStorage2D(depthStencil_, 1, GL_DEPTH24_STENCIL8, w, h));
+    GLCALL(glNamedFramebufferTexture(handle_, GL_DEPTH_STENCIL_ATTACHMENT, depthStencil_, 0));
 }
 
 Framebuffer::~Framebuffer()
@@ -92,6 +90,17 @@ void Framebuffer::set_render_target(int index, GLint cubeTexture, int face, int 
     renderTargets_[index] = {};
     GLCALL(glNamedFramebufferTextureLayer(handle_, GL_COLOR_ATTACHMENT0 + index, cubeTexture, level, face));
     ASSERT(is_complete());
+}
+
+void Framebuffer::resize(int w, int h)
+{
+    width_ = w;
+    height_ = h;
+
+    GLCALL(glDeleteTextures(1, &depthStencil_));
+    GLCALL(glCreateTextures(GL_TEXTURE_2D, 1, &depthStencil_));
+    GLCALL(glTextureStorage2D(depthStencil_, 1, GL_DEPTH24_STENCIL8, w, h));
+    GLCALL(glNamedFramebufferTexture(handle_, GL_DEPTH_STENCIL_ATTACHMENT, depthStencil_, 0));
 }
 
 YCU_OPENGL_END

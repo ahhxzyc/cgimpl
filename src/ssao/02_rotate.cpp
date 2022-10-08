@@ -1,6 +1,6 @@
 #include <ycu/opengl.h>
 #include <ycu/math.h>
-#include <ycu/mesh/mesh.h>
+#include <ycu/asset/mesh.h>
 #include <ycu/log/log.h>
 #include <ycu/event/keyboard.h>
 #include <ycu/random/random.h>
@@ -8,12 +8,11 @@
 #include <iostream>
 #include <stb_image.h>
 
-using ycu::mesh::Mesh;
-using ycu::math::float3;
-using ycu::math::float2;
 using namespace ycu::event;
 using namespace ycu::opengl;
 using namespace ycu::random;
+using namespace ycu::math;
+using namespace ycu::asset;
 
 const char *vertexSource = R"(# version 430 core
 
@@ -49,17 +48,77 @@ void main()
     fragNormal = normalize(vNormal);
 })";
 
+const char *quadVS = R"(# version 430 core
+
+layout(location = 0) in vec4 aPosition;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 aTexCoord;
+
+out vec2 vTexCoord;
+
+void main()
+{
+    gl_Position = aPosition;
+    vTexCoord = aTexCoord;
+})";
+
+const char *quadFS = R"(# version 430 core
+
+layout(binding = 0) uniform sampler2D gPosition;
+layout(binding = 1) uniform sampler2D gNormal;
+layout(location = 0) out vec4 fragColor;
+
+#define MAX_NUM_SAMPLES 64
+
+uniform mat4 uViewMatrix;
+uniform mat4 uProjectionMatrix;
+uniform int uNumSamples;
+uniform vec3 uSamples[MAX_NUM_SAMPLES];
+
+in vec3 vPosition;
+in vec3 vNormal;
+in vec2 vTexCoord;
+
+mat3 create_tbn(vec3 n)
+{
+    vec3 a = abs(n.x) > 0.9 ? vec3(0,1,0) : vec3(1,0,0);
+    vec3 t = normalize(cross(a, n));
+    vec3 b = cross(n, t);
+    return mat3(t, b, n);
+}
+
+void main()
+{
+    vec3 normal = texture(gNormal, vTexCoord).xyz;
+    vec3 viewPos = texture(gPosition, vTexCoord).xyz;
+    mat3 tbn = create_tbn(normal);
+    float occ = 0.0;
+    for (int i = 0; i < uNumSamples; i ++ )
+    {
+        vec3 samplePos = viewPos + tbn * uSamples[i] * 0.1;
+        vec4 p = uProjectionMatrix * vec4(samplePos, 1.0);
+        p.xyz /= p.w;
+        p.xyz = p.xyz * 0.5 + vec3(0.5);
+        float depth = texture(gPosition, p.xy).z;
+        if (depth > samplePos.z)
+        {
+            occ += 1.0;
+        }
+    }
+    fragColor = vec4(vec3(1.0 - occ / uNumSamples), 1.0);
+})";
+
 int main()
 {
     ycu::log::Log::Init();
 
-    Window window;
+    Window window(800, 800);
     Keyboard keyboard;
     window.attach(static_cast<receiver_t<KeyDownEvent>*>(&keyboard));
     window.attach(static_cast<receiver_t<KeyUpEvent>*>(&keyboard));
     window.attach(static_cast<receiver_t<KeyHoldEvent>*>(&keyboard));
 
-    auto mesh = std::make_shared<Mesh>("E:/vscodedev/ycutils/res/cornell-box.obj");
+    auto mesh = std::make_shared<Mesh>("../../../res/cornell-box.obj");
     auto meshRender = std::make_shared<MeshRender>(mesh);
     auto meshShader = std::make_shared<Shader>("", vertexSource, fragmentSource);
 
@@ -105,7 +164,7 @@ int main()
     noiseTextureDesc.wrapS = GL_REPEAT;
     noiseTextureDesc.wrapT = GL_REPEAT;
     auto noiseTexture = std::make_shared<Texture>(noiseTextureDesc);
-    noiseTexture->set_data(noiseTextureSize, noiseTextureSize, noise.data(), GL_FLOAT);
+    noiseTexture->set_data(noiseTextureSize, noiseTextureSize, 3, noise.data(), GL_FLOAT);
 
     while (!window.ShouldClose())
     {

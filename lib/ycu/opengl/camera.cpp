@@ -88,4 +88,12 @@ void Camera::deserialize()
     }
 }
 
+ycu::math::mat4f Camera::ortho() const
+{
+    auto asp = aspectRatio();
+    float vsize = 3.f;
+    float hsize = vsize * asp;
+    return mat4f::left_transform::ortho(-hsize, hsize, -vsize, vsize, nearPlane, farPlane);
+}
+
 YCU_OPENGL_END

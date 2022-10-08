@@ -17,6 +17,7 @@ public:
 
     void add_render_target(GLenum format);
     void set_render_target(int index, GLint cubeTexture, int face, int level = 0);
+    void resize(int w, int h);
     std::shared_ptr<Texture> nth_render_target(int index);
     void bind();
     void unbind();
@@ -25,6 +26,7 @@ public:
     bool is_complete();
 private:
     GLuint handle_;
+    GLuint depthStencil_;
     int width_, height_;
     inline static const int maxNumRTs = 8;
     int numRTs = 0;

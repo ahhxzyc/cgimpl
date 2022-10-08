@@ -43,7 +43,7 @@ public:
     {
         static auto translate(const vec3<T> &v);
         static auto rotate(const vec3<T> &axis, T angle);
-        static auto rotate_x(T angle);
+        static auto rotate_x(T rad);
         static auto scale(const vec3<T> &ratio);
         static auto lookat(const vec3<T> &eye, const vec3<T> &target, const vec3<T> &up);
         static auto perspective(T fovy_degrees, T aspect_ratio, T near_plane, T far_plane);
@@ -58,6 +58,7 @@ public:
         static auto scale(const vec3<T> &ratio);
         static auto lookat(const vec3<T> &eye, const vec3<T> &target, const vec3<T> &up);
         static auto perspective(T fovy_degrees, T aspect_ratio, T near_plane, T far_plane);
+        static auto ortho(T left, T right, T bottom, T top, T zNear, T ar);
     };
 };
 
@@ -173,13 +174,13 @@ auto tmat4<T>::right_transform::rotate(const vec3<T> &axis, T angle)
     // TODO
 }
 template<typename T>
-auto tmat4<T>::right_transform::rotate_x(T angle)
+auto tmat4<T>::right_transform::rotate_x(T rad)
 {
-    auto cost = std::cos(angle), sint = std::sin(angle);
+    auto C = std::cos(rad), S = std::sin(rad);
     return self_t(
         1, 0, 0, 0,
-        0, cost, sint, 0,
-        0, -sint, cost, 0,
+        0, C, S, 0,
+        0, -S, C, 0,
         0, 0, 0, 1);
 }
 
@@ -230,9 +231,9 @@ auto tmat4<T>::left_transform::rotate(const vec3<T> &axis, T angle)
     return tmat4<T>::right_transform::rotate(axis, angle).transpose();
 }
 template<typename T>
-auto tmat4<T>::left_transform::rotate_x(T angle)
+auto tmat4<T>::left_transform::rotate_x(T rad)
 {
-    return tmat4<T>::right_transform::rotate_x(angle).transpose();
+    return tmat4<T>::right_transform::rotate_x(rad).transpose();
 }
 
 template<typename T>
@@ -266,6 +267,15 @@ auto tmat4<T>::left_transform::perspective(T fovy_degrees, T aspect_ratio, T nea
         0,                C,  0, 0,
         0,                0,  A, B,
         0,                0, -1, 0);
+}
+template<typename T>
+auto tmat4<T>::left_transform::ortho(T left, T right, T bottom, T top, T zNear, T zFar)
+{
+    return self_t(
+        2 / (right - left), 0,                   0,                     -(right+left) / (right-left),
+        0,                  2 / (top - bottom),  0,                     -(top+bottom) / (top-bottom),
+        0,                  0,                   -2 / (zFar - zNear),   -(zFar+zNear) / (zFar-zNear),
+        0,                  0,                   0,                     1);
 }
 
 template<typename T> auto operator + (const tmat4<T> &lhs, const tmat4<T> &rhs)

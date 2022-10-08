@@ -11,14 +11,14 @@ using namespace ycu::event;
 
 static std::unordered_map<GLFWwindow*, Window*> sWindowPtrMap;
 
-Window::Window()
+Window::Window(int w, int h)
 {
     // init GLFW
     ASSERT(glfwInit());
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-    glfwWindow_ = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
+    glfwWindow_ = glfwCreateWindow(w, h, "Hello World", NULL, NULL);
     ASSERT(glfwWindow_);
     glfwMakeContextCurrent(glfwWindow_);
 

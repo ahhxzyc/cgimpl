@@ -1,6 +1,6 @@
 #include <ycu/opengl.h>
 #include <ycu/math.h>
-#include <ycu/mesh/mesh.h>
+#include <ycu/asset/mesh.h>
 #include <ycu/log/log.h>
 #include <ycu/event/keyboard.h>
 #include <ycu/random/random.h>
@@ -8,12 +8,11 @@
 #include <iostream>
 #include <stb_image.h>
 
-using ycu::mesh::Mesh;
-using ycu::math::float3;
-using ycu::math::float2;
 using namespace ycu::event;
 using namespace ycu::opengl;
 using namespace ycu::random;
+using namespace ycu::math;
+using namespace ycu::asset;
 
 const char *vertexSource = R"(# version 430 core
 
@@ -52,8 +51,8 @@ void main()
 const char *quadVS = R"(# version 430 core
 
 layout(location = 0) in vec4 aPosition;
-//layout(location = 1) in vec3 aNormal;
-layout(location = 1) in vec2 aTexCoord;
+layout(location = 1) in vec3 aNormal;
+layout(location = 2) in vec2 aTexCoord;
 
 out vec2 vTexCoord;
 
@@ -142,13 +141,13 @@ int main()
 {
     ycu::log::Log::Init();
 
-    Window window;
+    Window window(800, 800);
     Keyboard keyboard;
     window.attach(static_cast<receiver_t<KeyDownEvent>*>(&keyboard));
     window.attach(static_cast<receiver_t<KeyUpEvent>*>(&keyboard));
     window.attach(static_cast<receiver_t<KeyHoldEvent>*>(&keyboard));
 
-    auto mesh = std::make_shared<Mesh>("E:/vscodedev/ycutils/res/cornell-box.obj");
+    auto mesh = std::make_shared<Mesh>("../../../res/cornell-box.obj");
     auto meshRender = std::make_shared<MeshRender>(mesh);
     auto meshShader = std::make_shared<Shader>("", vertexSource, fragmentSource);
 
@@ -159,6 +158,7 @@ int main()
     Camera camera;
 
     Framebuffer framebuffer(window.width(), window.height());
+    framebuffer.add_render_target(GL_RGBA8); // sRGB buffer
     framebuffer.add_render_target(GL_RGBA16F); // view position gbuffer
     framebuffer.add_render_target(GL_RGBA16F); // normal gbuffer
 
