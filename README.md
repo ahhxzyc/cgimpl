@@ -10,3 +10,4 @@
 
 ## SSAO
 
+![result](gallery/ssao.png)

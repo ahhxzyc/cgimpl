@@ -66,6 +66,7 @@ const char *quadFS = R"(# version 430 core
 
 layout(binding = 0) uniform sampler2D gPosition;
 layout(binding = 1) uniform sampler2D gNormal;
+layout(binding = 2) uniform sampler2D uNoiseTexture;
 layout(location = 0) out vec4 fragColor;
 
 #define MAX_NUM_SAMPLES 64
@@ -81,8 +82,10 @@ in vec2 vTexCoord;
 
 mat3 create_tbn(vec3 n)
 {
-    vec3 a = abs(n.x) > 0.9 ? vec3(0,1,0) : vec3(1,0,0);
-    vec3 t = normalize(cross(a, n));
+    vec2 noiseScale = textureSize(gPosition, 0) / textureSize(uNoiseTexture, 0);
+    float scale = max(noiseScale.x, noiseScale.y);
+    vec3 noise = texture(uNoiseTexture, vTexCoord * scale).xyz;
+    vec3 t = normalize(noise - n * dot(n, noise));
     vec3 b = cross(n, t);
     return mat3(t, b, n);
 }
@@ -129,6 +132,7 @@ int main()
     Camera camera;
 
     Framebuffer framebuffer(window.width(), window.height());
+    framebuffer.add_render_target(GL_RGBA8);
     framebuffer.add_render_target(GL_RGBA16F); // view position gbuffer
     framebuffer.add_render_target(GL_RGBA16F); // normal gbuffer
 
